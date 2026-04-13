@@ -66,7 +66,7 @@ def deploy_update(resource_name: str):
     print(f"Updating existing Agent Engine: {resource_name} ...")
     remote_agent = reasoning_engines.ReasoningEngine(resource_name)
     remote_agent.update(
-        agent_engine=build_app(),
+        reasoning_engine_interface=build_app(),
         requirements=AGENT_REQUIREMENTS,
         display_name=DISPLAY_NAME,
         extra_packages=EXTRA_PACKAGES,
