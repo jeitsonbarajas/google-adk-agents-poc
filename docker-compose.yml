@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  google-adk-agents:
+    build: .
+    ports:
+      - "8000:8000"
+      - "8001:8001"  # ADK Web
+    environment:
+      - ENVIRONMENT=docker
+      - PORT=8000
+      - PYTHONPATH=/app
+      - ADAPTER_SERVER_URL=http://localhost:8000/api
+      # Cargar desde .env
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+    volumes:
+      - ./agents-poc:/app
+      - logs_volume:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - adk_network
+
+volumes:
+  logs_volume:
+
+networks:
+  adk_network:
+    driver: bridge

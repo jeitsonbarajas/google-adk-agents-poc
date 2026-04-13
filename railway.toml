@@ -1,0 +1,26 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "python production_start.py"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "always"
+
+[env]
+PYTHONPATH = "/app"
+ENVIRONMENT = "railway"
+NODE_ENV = "production"
+
+[[services]]
+name = "google-adk-agents"
+
+[services.variables]
+PORT = "8000"
+ADAPTER_SERVER_URL = "http://localhost:8000/api"
+
+# Variables de entorno requeridas (configurar en Railway dashboard)
+# OPENAI_API_KEY = "sk-xxxxx"
+# GOOGLE_API_KEY = "AIxxxx" (opcional)
+# CLAUDE_API_KEY = "sk-antxxxx" (opcional)

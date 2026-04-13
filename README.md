@@ -10,7 +10,7 @@ Esta **POC** fue diseñada para demostrar las capacidades de **Google ADK** en u
 
 1. **🤖 Orquestación Inteligente**: Demostrar cómo un agente coordinador puede gestionar flujos complejos distribuyendo tareas a agentes especializados
 2. **🔧 Especialización de Agentes**: Mostrar agentes con responsabilidades específicas (clasificación, resolución, redacción)
-3. **🛠️ Integración de Herramientas**: Ilustrar cómo los agentes pueden invocar APIs externas (Azure OpenAI Foundry) de forma autónoma
+3. **🛠️ Integración de Herramientas**: Ilustrar cómo los agentes pueden invocar APIs externas (OpenAI GPT-4) de forma autónoma
 4. **👥 Human-in-the-Loop**: Implementar validación humana manteniendo la eficiencia del sistema automatizado
 5. **🌐 Interfaces Múltiples**: Proporcionar tanto CLI como interfaz web para diferentes casos de uso
 
@@ -18,8 +18,8 @@ Esta **POC** fue diseñada para demostrar las capacidades de **Google ADK** en u
 
 | Escenario | Agente Principal | Herramientas | Resultado |
 |-----------|------------------|--------------|-----------|
-| **Problema Técnico** | Agente Resolutor | `resolver_problema_tecnico` + Azure OpenAI | Diagnóstico técnico detallado |
-| **Problema Facturación** | Agente Resolutor | `resolver_problema_facturacion` + Azure OpenAI | Análisis financiero y solución |
+| **Problema Técnico** | Agente Resolutor | `resolver_problema_tecnico` + GPT-4 | Diagnóstico técnico detallado |
+| **Problema Facturación** | Agente Resolutor | `resolver_problema_facturacion` + GPT-4 | Análisis financiero y solución |
 | **Redacción Final** | Agente Redactor | Procesamiento interno | Respuesta empática al cliente |
 
 ### 🏆 Valor Agregado de la Arquitectura
@@ -33,19 +33,7 @@ Esta **POC** fue diseñada para demostrar las capacidades de **Google ADK** en u
 ## 🏗️ Arquitectura del Sistema
 
 **Patrón:** Orquestador + Sub-agentes + Herramientas Externas + Human-in-the-Loop  
-**Tecnologías:** Python 3.11+, Google ADK, FastAPI, Azure OpenAI (Foundry), Gemini 2.5 Flash
-
-### 📌 Arquitectura de IA Actual (Estado Real)
-
-La ruta de modelos `gpt-*` ahora usa **Azure AI Foundry (Hub/Project) + Azure OpenAI deployment**,
-no OpenAI API pública directa.
-
-En términos operativos:
-
-- El proxy `/v1/chat/completions` enruta `gpt-*` hacia Azure OpenAI.
-- El deployment activo se controla con `AZURE_OPENAI_DEPLOYMENT` (ejemplo: `gpt-5-nano`).
-- La conectividad se basa en `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_KEY` + `AZURE_OPENAI_API_VERSION`.
-- Gemini y Claude se mantienen como proveedores complementarios.
+**Tecnologías:** Python 3.11+, Google ADK, FastAPI, OpenAI GPT-4, Gemini 2.5 Flash
 
 ### 🎯 Flujo de Trabajo
 
@@ -56,13 +44,14 @@ flowchart TD
     C --> D{Clasificación}
     D -->|Técnico| E[Agente Resolutor<br/>+ Tool Técnica]
     D -->|Facturación| F[Agente Resolutor<br/>+ Tool Facturación]
-    E --> G[Azure OpenAI via Proxy<br/>Diagnóstico detallado]
+    E --> G[GPT-4 via Proxy<br/>Diagnóstico detallado]
     F --> G
     G --> H[Solución generada]
     H --> I[👨‍💼 Auditoría Humana<br/>HITL Validation]
     I --> J{Decisión humana}
     J -->|Aprobar| K[Agente Redactor]
-    J -->|Editar| L[Corrección manual] --> K
+    J -->|Editar| L[Corrección manual] 
+    L --> K
     J -->|Rechazar| M[Cancelar flujo]
     K --> N[Respuesta empática final]
 ```
@@ -87,7 +76,7 @@ google-adk-agents-poc/
 │   │
 │   ├── tools/                  # 🔧 Herramientas invocables
 │   │   ├── __init__.py
-│   │   ├── llamar_gpt4.py      # Adaptador HTTP a Azure OpenAI
+│   │   ├── llamar_gpt4.py      # Adaptador HTTP a OpenAI
 │   │   ├── resolver_problema_tecnico.py
 │   │   ├── resolver_problema_facturacion.py
 │   │   └── resolver_problema_con_multimodel.py
@@ -140,15 +129,10 @@ pip install -r requirements.txt
 Crear archivo `.env` en la raíz del proyecto:
 
 ```env
-# Azure OpenAI Foundry (requerido para ruta gpt)
-AZURE_OPENAI_ENDPOINT=https://<tu-recurso>.cognitiveservices.azure.com/
-AZURE_OPENAI_KEY=<tu-azure-openai-key>
-AZURE_OPENAI_DEPLOYMENT=gpt-5-nano
-AZURE_OPENAI_API_VERSION=2024-12-01-preview
-
-# Otros proveedores (opcionales)
-GOOGLE_API_KEY=AIxxxxxxxxxxxx          # Para Gemini
-CLAUDE_API_KEY=sk-antxxxxxxxxxxxxx     # Para Claude
+# API Keys (requerido mínimo OPENAI_API_KEY)
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxx
+GOOGLE_API_KEY=AIxxxxxxxxxxxx          # Para Gemini (opcional)
+CLAUDE_API_KEY=sk-antxxxxxxxxxxxxx     # Para Claude (opcional)
 
 # Configuración del proxy HTTP
 PORT=8001
@@ -218,295 +202,74 @@ python start.py --all
 # - CLI: python main.py (en otra terminal)
 ```
 
+## 🚀 Despliegue en Producción
+
+### 🚄 Railway (Recomendado para Simplicidad)
+
+```bash
+# Configuración inicial
+./setup.sh  # o setup.bat en Windows
+
+# Despliegue automático
+./deploy-railway.sh
+
+# URL: https://tu-proyecto.up.railway.app
+```
+
+**Características:**
+- Despliegue automático desde GitHub
+- Variables de entorno seguras
+- SSL/HTTPS incluido
+- Escalado automático
+- $5-20/mes + API costs
+
+### ☁️ Google Cloud Run (Recomendado para Escala)
+
+```bash
+# Configuración inicial
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+
+# Despliegue automático
+./deploy-gcp.sh
+
+# URL: https://google-adk-agents-xxx-uc.a.run.app
+```
+
+**Características:**
+- Escalado serverless automático
+- Pay-per-use pricing
+- Integración con Google AI
+- CI/CD con Cloud Build
+- Free tier generoso
+
+### 🐳 Docker Local/Self-Hosted
+
+```bash
+# Docker Compose
+docker-compose up --build
+
+# Docker directo
+docker build -t google-adk-agents .
+docker run -p 8000:8000 -e OPENAI_API_KEY=sk-xxx google-adk-agents
+```
+
+### 📋 Variables de Entorno Requeridas
+
+```bash
+# Mínimo requerido
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxx
+
+# Opcionales para más modelos
+GOOGLE_API_KEY=AIxxxxxxxxxxxxxx
+CLAUDE_API_KEY=sk-antxxxxxxxxxxxxx
+```
+
+**📖 Ver [DEPLOYMENT.md](DEPLOYMENT.md) para guías detalladas paso a paso**
+# - CLI: python main.py (en otra terminal)
+```
+
 ## ⚙️ Configuración Avanzada
-
-### ☁️ Vertex AI en Cloud Run (Paso a Paso)
-
-Esta POC puede usar Gemini via Vertex AI para evitar depender de `GOOGLE_API_KEY`.
-Con esto, Cloud Run autentica usando su service account.
-
-1. Configura proyecto y region:
-
-```bash
-gcloud config set project TU_PROJECT_ID
-gcloud config set run/region us-central1
-```
-
-2. Habilita APIs necesarias:
-
-```bash
-gcloud services enable run.googleapis.com aiplatform.googleapis.com artifactregistry.googleapis.com
-```
-
-3. Crea service account para Cloud Run:
-
-```bash
-gcloud iam service-accounts create adk-cloudrun-sa \
-   --display-name="ADK Cloud Run Service Account"
-```
-
-4. Asigna permisos minimos para Vertex:
-
-```bash
-gcloud projects add-iam-policy-binding TU_PROJECT_ID \
-   --member="serviceAccount:adk-cloudrun-sa@TU_PROJECT_ID.iam.gserviceaccount.com" \
-   --role="roles/aiplatform.user"
-```
-
-5. Despliega configurando Vertex AI por variables de entorno:
-
-```bash
-gcloud run deploy google-adk-agents-poc \
-   --source . \
-   --platform managed \
-   --allow-unauthenticated \
-   --service-account adk-cloudrun-sa@TU_PROJECT_ID.iam.gserviceaccount.com \
-   --set-env-vars USE_VERTEX_AI=true,GOOGLE_CLOUD_PROJECT=TU_PROJECT_ID,GOOGLE_CLOUD_LOCATION=us-central1,AZURE_OPENAI_ENDPOINT=TU_AZURE_ENDPOINT,AZURE_OPENAI_KEY=TU_AZURE_KEY,AZURE_OPENAI_DEPLOYMENT=gpt-5-nano,AZURE_OPENAI_API_VERSION=2024-12-01-preview,CLAUDE_API_KEY=TU_CLAUDE_KEY
-```
-
-6. Verifica la URL y prueba Swagger:
-
-```bash
-gcloud run services describe google-adk-agents-poc --region us-central1 --format="value(status.url)"
-```
-
-Luego abre:
-
-- `https://<URL_SERVICIO>/docs`
-- `https://<URL_SERVICIO>/soporte/resolver`
-
-Notas:
-
-- Si usas Vertex AI, no necesitas `GOOGLE_API_KEY` para Gemini.
-- Si aparece `PERMISSION_DENIED`, revisa que la service account tenga `roles/aiplatform.user`.
-- Mantener `GOOGLE_CLOUD_LOCATION=us-central1` suele ser la opcion mas compatible para Gemini.
-
-### ☁️ Azure Container Apps + Bicep (Paso a Paso Completo)
-
-Esta guia despliega la API en Azure usando:
-
-- `infra/main.bicep`
-- `infra/main.parameters.json`
-- Azure Container Registry (ACR)
-- Azure Key Vault
-- Azure Container Apps
-
-Importante:
-
-- Rota todas las API keys si fueron compartidas en terminal o archivos.
-- Si tu red corporativa bloquea SSL hacia `*.azurecr.io`, usa el flujo de build remoto con `az acr build`.
-
-1. Prerrequisitos
-
-```bash
-az --version
-az bicep version
-docker --version
-```
-
-2. Login y suscripcion
-
-```bash
-az login
-az account set --subscription TU_SUBSCRIPTION_ID
-```
-
-3. Definir variables
-
-```bash
-RG=rg-adk-poc
-PARAMS_FILE=infra/main.parameters.json
-ACR_NAME=acradkpocagents
-IMAGE_NAME=google-adk-agents-poc
-IMAGE_TAG=latest
-```
-
-4. Revisar parametros de despliegue
-
-Confirma en `infra/main.parameters.json`:
-
-- `acrName` coincide con `ACR_NAME`
-- `imageName` es `google-adk-agents-poc`
-- `imageTag` es `latest`
-- `azureOpenAiEndpoint` apunta a tu recurso Foundry
-- `azureOpenAiApiKey` tiene la key correcta
-- `azureOpenAiDeployment` coincide con tu deployment (ejemplo: `gpt-5-nano`)
-- `azureOpenAiApiVersion` coincide con la version habilitada en el recurso
-- `claudeApiKey` (el codigo usa `CLAUDE_API_KEY`)
-
-5. Desplegar/actualizar infraestructura
-
-```bash
-az deployment group create \
-   --resource-group $RG \
-   --template-file infra/main.bicep \
-   --parameters @$PARAMS_FILE
-```
-
-6. Validar que ACR exista
-
-```bash
-az acr show --name $ACR_NAME --resource-group $RG --output table
-```
-
-7A. Flujo normal de ACR (si no hay problemas SSL)
-
-```bash
-az acr login --name $ACR_NAME
-docker build -t ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG} .
-docker push ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}
-```
-
-7B. Flujo recomendado cuando aparece `CONNECTIVITY_SSL_ERROR`
-
-Si `az acr login` o `az acr repository show-tags` falla por SSL, usa build remoto:
-
-```bash
-az acr build --registry $ACR_NAME --image ${IMAGE_NAME}:${IMAGE_TAG} .
-```
-
-Este comando construye y publica la imagen dentro de Azure, evitando `docker push` local.
-
-8. Validar que el tag exista en ACR
-
-```bash
-az acr repository show-tags \
-   --name $ACR_NAME \
-   --repository $IMAGE_NAME \
-   --output table
-```
-
-Debe aparecer `latest`.
-
-9. Aplicar imagen a Container App
-
-Opcion A (redeploy completo Bicep):
-
-```bash
-az deployment group create \
-   --resource-group $RG \
-   --template-file infra/main.bicep \
-   --parameters @$PARAMS_FILE
-```
-
-Opcion B (solo actualizar imagen):
-
-```bash
-az containerapp update \
-   --name ca-google-adk-agents-poc \
-   --resource-group $RG \
-   --image ${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}
-```
-
-Nota importante para Azure:
-
-- Azure Container Apps no garantiza inyectar `PORT` como Cloud Run.
-- Esta plantilla configura dos puertos:
-   - `targetPort`: puerto publico (ingress de Container Apps)
-   - `apiPort`: puerto interno de `server.py`
-- Configuracion actual de esta POC:
-   - `targetPort=8000` (ADK Web, unico puerto expuesto publicamente)
-   - `apiPort=8080` (solo interno dentro del contenedor)
-- Tambien configura `ADAPTER_SERVER_URL=http://127.0.0.1:<apiPort>` para que:
-   - FastAPI escuche en el puerto interno.
-   - Las llamadas internas al adapter HTTP funcionen dentro del mismo contenedor.
-- Si estos valores faltan, la app puede quedar desplegada pero responder con timeout.
-
-Recuerda: `/docs`, `/openapi.json` y `/soporte/*` pertenecen a FastAPI en `apiPort=8080`, por lo que no quedan expuestos publicamente cuando el ingress sale por `8000`.
-
-10. Obtener URL publica
-
-```bash
-az containerapp show \
-   --name ca-google-adk-agents-poc \
-   --resource-group $RG \
-   --query properties.configuration.ingress.fqdn -o tsv
-```
-
-11. Probar servicio
-
-- `https://<FQDN>/` (ADK Web expuesto por `targetPort=8000`)
-
-Validacion funcional publica:
-
-```bash
-# Abrir ADK Web en navegador
-start https://<FQDN>/
-```
-
-Validacion API interna (opcional):
-
-- Ejecutar dentro del contenedor/entorno interno o exponer temporalmente `apiPort` si se requiere prueba externa de `/soporte/*`.
-
-12. Ver logs si hay error
-
-```bash
-az containerapp logs show \
-   --name ca-google-adk-agents-poc \
-   --resource-group $RG \
-   --follow
-```
-
-Errores tipicos y solucion:
-
-- `MANIFEST_UNKNOWN`: la imagen/tag no existe en ACR. Ejecutar paso 7 y 8.
-- `CONNECTIVITY_SSL_ERROR`: usar paso 7B (`az acr build`).
-- `401/403` en proveedores IA: revisar secretos en Key Vault y parametros.
-
-### ✅ Artefactos y Características a Solicitar para Despliegue en Azure
-
-Para que otro equipo (plataforma/cloud/security) pueda habilitar el despliegue sin fricción,
-solicita este paquete mínimo.
-
-Artefactos de infraestructura:
-
-- Resource Group objetivo (o permiso para crearlo).
-- Azure Container Registry (ACR) habilitado para pull desde Container Apps.
-- Azure Key Vault con RBAC habilitado.
-- User Assigned Managed Identity para Container App.
-- Azure Container Apps Environment.
-- Azure Container App con ingress externo y puertos definidos.
-- Plantilla IaC aprobada: `infra/main.bicep` y archivo de parámetros del entorno.
-
-Artefactos de aplicación:
-
-- Imagen publicada en ACR: `<acr>.azurecr.io/google-adk-agents-poc:<tag>`.
-- Variables de entorno funcionales:
-   - `AZURE_OPENAI_ENDPOINT`
-   - `AZURE_OPENAI_KEY` (vía secreto)
-   - `AZURE_OPENAI_DEPLOYMENT`
-   - `AZURE_OPENAI_API_VERSION`
-   - `CLAUDE_API_KEY` (si aplica)
-   - `GOOGLE_API_KEY` o `USE_VERTEX_AI=true` + `GOOGLE_CLOUD_PROJECT` + `GOOGLE_CLOUD_LOCATION`
-   - `PORT` y `ADAPTER_SERVER_URL`
-- Secretos cargados en Key Vault y enlazados en Container App.
-
-Permisos/RBAC mínimos:
-
-- Managed Identity con rol `AcrPull` sobre ACR.
-- Managed Identity con rol `Key Vault Secrets User` sobre Key Vault.
-- Operador de despliegue con permisos para:
-   - `Microsoft.App/*`
-   - `Microsoft.ContainerRegistry/*`
-   - `Microsoft.KeyVault/*`
-   - `Microsoft.ManagedIdentity/*`
-   - `Microsoft.Authorization/roleAssignments/*`
-
-Capacidades de red y seguridad:
-
-- Salida HTTPS permitida desde Container Apps hacia:
-   - Endpoint de Azure OpenAI/Foundry.
-   - Servicios externos de IA adicionales (si se usan).
-- Política para evitar hardcodeo de credenciales en código o parameters productivos.
-- Rotación periódica de secretos (Key Vault).
-
-Validaciones de aceptación (go-live checklist):
-
-- Health del contenedor correcto y arranque sin errores de variables.
-- Endpoint público responde en puerto 8000 (ruta funcional definida por el front expuesto).
-- Flujo HITL completo validado (`/soporte/resolver` -> `/soporte/aprobar`).
-- Logs centralizados accesibles (Container Apps logs).
-- Evidencia de rollback: tag anterior disponible en ACR.
 
 ### 🐍 Configuración del Proyecto
 
@@ -530,7 +293,7 @@ El sistema incluye un proxy HTTP que soporta múltiples proveedores de IA:
 
 ```python
 # Modelos soportados via proxy HTTP
-- "gpt-*"                                   # Azure OpenAI (Foundry) via deployment configurado
+- "gpt-4o-mini", "gpt-4o", "gpt-4-turbo"  # OpenAI
 - "gemini-2.5-flash"                      # Google Gemini  
 - "claude-sonnet-4-6"                     # Anthropic Claude
 ```
