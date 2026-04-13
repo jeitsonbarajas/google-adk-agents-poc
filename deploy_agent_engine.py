@@ -65,16 +65,6 @@ def build_app() -> reasoning_engines.AdkApp:
     )
 
 
-def _runtime_env_vars() -> dict:
-    """Environment variables injected into the Agent Engine sandbox at runtime."""
-    return {
-        "GOOGLE_GENAI_USE_VERTEXAI": "true",
-        "GOOGLE_CLOUD_PROJECT": PROJECT_ID,
-        "GOOGLE_CLOUD_LOCATION": LOCATION,
-        "GOOGLE_API_KEY": os.environ.get("GOOGLE_API_KEY", ""),
-    }
-
-
 def deploy_new() -> reasoning_engines.ReasoningEngine:
     """Create a brand-new Agent Engine deployment."""
     print(f"  Project  : {PROJECT_ID}")
@@ -89,7 +79,6 @@ def deploy_new() -> reasoning_engines.ReasoningEngine:
         display_name=DISPLAY_NAME,
         description="Multi-agent customer support system with HITL pattern.",
         extra_packages=[],
-        env_vars=_runtime_env_vars(),
     )
     return remote_agent
 
@@ -102,7 +91,6 @@ def deploy_update(resource_name: str) -> reasoning_engines.ReasoningEngine:
         agent_engine=build_app(),
         requirements=AGENT_REQUIREMENTS,
         display_name=DISPLAY_NAME,
-        env_vars=_runtime_env_vars(),
     )
     return remote_agent
 
