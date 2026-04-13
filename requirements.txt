@@ -3,6 +3,11 @@ google-adk>=1.0.0
 openai>=1.0.0
 anthropic>=0.25.0
 
+# Vertex AI Agent Engine
+vertexai>=1.42.0
+google-cloud-aiplatform>=1.42.0
+google-cloud-storage>=2.10.0
+
 # Web framework
 fastapi>=0.100.0
 uvicorn[standard]>=0.20.0

@@ -56,7 +56,9 @@ gcloud services enable \
   run.googleapis.com \
   iam.googleapis.com \
   iamcredentials.googleapis.com \
-  cloudbuild.googleapis.com
+  cloudbuild.googleapis.com \
+  aiplatform.googleapis.com \
+  storage.googleapis.com
 
 echo "   APIs enabled."
 
@@ -99,7 +101,9 @@ echo ">> [4/6] Assigning IAM roles to ${SA_EMAIL}..."
 for ROLE in \
   "roles/artifactregistry.writer" \
   "roles/run.admin" \
-  "roles/iam.serviceAccountUser"; do
+  "roles/iam.serviceAccountUser" \
+  "roles/aiplatform.admin" \
+  "roles/storage.admin"; do
   gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
     --member="serviceAccount:${SA_EMAIL}" \
     --role="${ROLE}" \
@@ -107,6 +111,29 @@ for ROLE in \
     --quiet
   echo "   Assigned: ${ROLE}"
 done
+
+# ---------------------------------------------------------------------------
+# 4b. Create GCS staging bucket for Vertex AI Agent Engine artifacts
+# ---------------------------------------------------------------------------
+STAGING_BUCKET="${PROJECT_ID}-agent-engine-staging"
+echo ""
+echo ">> [4b] Creating staging bucket: gs://${STAGING_BUCKET} in ${REGION}..."
+if gcloud storage buckets describe "gs://${STAGING_BUCKET}" --project="${PROJECT_ID}" &>/dev/null; then
+  echo "   Bucket already exists, skipping."
+else
+  gcloud storage buckets create "gs://${STAGING_BUCKET}" \
+    --location="${REGION}" \
+    --project="${PROJECT_ID}" \
+    --uniform-bucket-level-access
+  echo "   Bucket created."
+fi
+
+# Grant the SA access to the staging bucket
+gcloud storage buckets add-iam-policy-binding "gs://${STAGING_BUCKET}" \
+  --member="serviceAccount:${SA_EMAIL}" \
+  --role="roles/storage.objectAdmin" \
+  --quiet
+echo "   Granted storage.objectAdmin on staging bucket."
 
 # ---------------------------------------------------------------------------
 # 5. Create Workload Identity Pool
@@ -182,8 +209,8 @@ echo "    OPENAI_API_KEY"
 echo "    GOOGLE_API_KEY"
 echo "    CLAUDE_API_KEY"
 echo ""
-echo "  Image will be published to:"
-echo "  ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REGISTRY_NAME}/${SERVICE_NAME}"
+echo "  Vertex AI Agent Engine staging bucket:"
+echo "  gs://${PROJECT_ID}-agent-engine-staging"
 echo ""
-echo "  Once secrets are set, push to main to trigger the first deployment."
+echo "  Once secrets are set, push to google-adk branch to trigger deployment."
 echo "======================================================================"

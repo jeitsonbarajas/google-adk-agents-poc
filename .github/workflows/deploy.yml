@@ -1,4 +1,4 @@
-name: Deploy to Cloud Run
+name: Deploy to Vertex AI Agent Engine
 
 on:
   push:
@@ -8,13 +8,10 @@ on:
 env:
   PROJECT_ID: careful-aleph-493015-f6
   REGION: us-east1
-  REGISTRY: us-east1-docker.pkg.dev
-  IMAGE_NAME: us-east1-docker.pkg.dev/careful-aleph-493015-f6/google-adk-agents/google-adk-agents-poc
-  SERVICE_NAME: google-adk-agents-poc
 
 jobs:
   deploy:
-    name: Build & Deploy
+    name: Deploy Agent Engine
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,67 +28,66 @@ jobs:
       # 2. Authenticate to GCP via Workload Identity Federation (no JSON key)
       # -----------------------------------------------------------------------
       - name: Authenticate to Google Cloud
-        id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       # -----------------------------------------------------------------------
-      # 3. Configure Docker to push to Artifact Registry
+      # 3. Set up Python
       # -----------------------------------------------------------------------
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
-
-      # -----------------------------------------------------------------------
-      # 4. Build Docker image
-      # -----------------------------------------------------------------------
-      - name: Build Docker image
-        run: |
-          docker build \
-            --tag "${{ env.IMAGE_NAME }}:${{ github.sha }}" \
-            --tag "${{ env.IMAGE_NAME }}:latest" \
-            --cache-from "${{ env.IMAGE_NAME }}:latest" \
-            .
-
-      # -----------------------------------------------------------------------
-      # 5. Push image to Artifact Registry
-      # -----------------------------------------------------------------------
-      - name: Push image to Artifact Registry
-        run: |
-          docker push "${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          docker push "${{ env.IMAGE_NAME }}:latest"
-
-      # -----------------------------------------------------------------------
-      # 6. Deploy to Cloud Run
-      # -----------------------------------------------------------------------
-      - name: Deploy to Cloud Run
-        id: deploy
-        uses: google-github-actions/deploy-cloudrun@v2
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          service: ${{ env.SERVICE_NAME }}
-          image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
-          region: ${{ env.REGION }}
-          flags: >-
-            --platform=managed
-            --allow-unauthenticated
-            --cpu=2
-            --memory=2Gi
-            --max-instances=10
-            --timeout=300
-            --port=8080
-          env_vars: |
-            ENVIRONMENT=production
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
-            CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}
+          python-version: "3.11"
+          cache: "pip"
 
       # -----------------------------------------------------------------------
-      # 7. Print deployed URL
+      # 4. Install dependencies
       # -----------------------------------------------------------------------
-      - name: Show service URL
+      - name: Install dependencies
+        run: pip install --no-cache-dir -r requirements.txt
+
+      # -----------------------------------------------------------------------
+      # 5. Restore previous Agent Engine resource name (for --update)
+      # -----------------------------------------------------------------------
+      - name: Restore Agent Engine resource name
+        id: restore
         run: |
-          echo "=========================================="
-          echo "  Deployed successfully!"
-          echo "  URL: ${{ steps.deploy.outputs.url }}"
-          echo "=========================================="
+          if [ -f agent_engine_resource.txt ]; then
+            RESOURCE=$(cat agent_engine_resource.txt)
+            echo "resource_name=$RESOURCE" >> $GITHUB_OUTPUT
+            echo "Found existing resource: $RESOURCE"
+          else
+            echo "resource_name=" >> $GITHUB_OUTPUT
+            echo "No existing resource found, will create new deployment."
+          fi
+
+      # -----------------------------------------------------------------------
+      # 6. Deploy (create new or update existing)
+      # -----------------------------------------------------------------------
+      - name: Deploy to Vertex AI Agent Engine
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ env.PROJECT_ID }}
+          GOOGLE_CLOUD_LOCATION: ${{ env.REGION }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          AGENT_ENGINE_RESOURCE_FILE: agent_engine_resource.txt
+        run: |
+          if [ -n "${{ steps.restore.outputs.resource_name }}" ]; then
+            python deploy_agent_engine.py --update "${{ steps.restore.outputs.resource_name }}"
+          else
+            python deploy_agent_engine.py
+          fi
+
+      # -----------------------------------------------------------------------
+      # 7. Commit updated resource name back to repo (to enable --update)
+      # -----------------------------------------------------------------------
+      - name: Save Agent Engine resource name
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add agent_engine_resource.txt
+          git diff --cached --quiet || git commit -m "chore: update agent engine resource name [skip ci]"
+          git push
