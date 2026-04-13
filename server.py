@@ -3,8 +3,6 @@ import os
 from typing import Literal
 from google import genai
 import uvicorn
-from openai import AsyncOpenAI
-from anthropic import AsyncAnthropic
 from fastapi import FastAPI, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -25,59 +23,51 @@ app = FastAPI(
 
 # Estado HITL en memoria (para POC). En producción usar Firestore o Redis.
 _pendientes: dict[str, str] = {}
-OPENAI_CLIENT = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-CLAUDE_CLIENT = AsyncAnthropic(api_key=os.getenv("CLAUDE_API_KEY"))
 
-# Configure Google Genai with API key
-GEMINI_CLIENT = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+_gemini_client: genai.Client | None = None
+
+
+def _get_gemini_client() -> genai.Client:
+    """Lazy-initialize Gemini client. Uses Vertex AI ADC when available, falls back to API key."""
+    global _gemini_client
+    if _gemini_client is None:
+        use_vertex = os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "false").lower() == "true"
+        if use_vertex:
+            _gemini_client = genai.Client(
+                vertexai=True,
+                project=os.getenv("GOOGLE_CLOUD_PROJECT"),
+                location=os.getenv("GOOGLE_CLOUD_LOCATION", "us-east1"),
+            )
+        else:
+            _gemini_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+    return _gemini_client
 
 
 def _build_upstream_http_error(exc: Exception) -> HTTPException:
     message = str(exc)
-
     if "API_KEY_INVALID" in message or "API key not valid" in message:
         return HTTPException(
             status_code=502,
             detail="Fallo al llamar al proveedor Google Gemini: GOOGLE_API_KEY invalida.",
         )
-
     return HTTPException(
         status_code=502,
         detail=f"Fallo al llamar a un proveedor externo: {message}",
     )
 
 @app.post("/v1/chat/completions")
-async def proxy_model(request: Request, model: str = Query("gpt-4o-mini")):
+async def proxy_model(request: Request, model: str = Query("gemini-2.5-flash")):
     try:
         data = await request.json()
         messages = data.get("messages", [])
-
-        print("  peticion " + model + " con mensaje: "+ str(messages)  )
-
-        # --- Routing según el modelo ---
-        if model.startswith("gpt"):  # OpenAI
-            resp = await OPENAI_CLIENT.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages
-            )
-            content = resp.choices[0].message.content
-
-        elif model.startswith("claude"):  # Anthropic
-            resp = await CLAUDE_CLIENT.messages.create(
-                model="claude-sonnet-4-6",
-                max_tokens=1000,
-                messages=messages 
-            )
-            content = resp.content[0].text
-
-        elif model.startswith("gemini"):  # Google Gemini
-            ultimo_mensaje = messages[-1]["content"] if messages else ""
-            resp = await GEMINI_CLIENT.aio.generate_content_async(ultimo_mensaje)
-            content = resp.text
-
-        else:
-            raise HTTPException(status_code=400, detail=f"Modelo {model} no soportado")
-
+        print("  peticion " + model + " con mensaje: "+ str(messages))
+        ultimo_mensaje = messages[-1]["content"] if messages else ""
+        client = _get_gemini_client()
+        resp = await client.aio.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=ultimo_mensaje,
+        )
+        content = resp.text
         return {"choices": [{"message": {"role": "assistant", "content": content}}]}
     except HTTPException:
         raise

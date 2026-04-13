@@ -70,9 +70,7 @@ jobs:
         env:
           GOOGLE_CLOUD_PROJECT: ${{ env.PROJECT_ID }}
           GOOGLE_CLOUD_LOCATION: ${{ env.REGION }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           AGENT_ENGINE_RESOURCE_FILE: agent_engine_resource.txt
         run: |
           if [ -n "${{ steps.restore.outputs.resource_name }}" ]; then

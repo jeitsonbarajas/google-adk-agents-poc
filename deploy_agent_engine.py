@@ -39,8 +39,6 @@ DISPLAY_NAME = "google-adk-agents-poc"
 # Agent requirements installed inside the Agent Engine sandbox
 AGENT_REQUIREMENTS = [
     "google-adk>=1.0.0",
-    "openai>=1.0.0",
-    "anthropic>=0.25.0",
     "httpx>=0.25.0",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
@@ -73,6 +71,7 @@ def _runtime_env_vars() -> dict:
         "GOOGLE_GENAI_USE_VERTEXAI": "true",
         "GOOGLE_CLOUD_PROJECT": PROJECT_ID,
         "GOOGLE_CLOUD_LOCATION": LOCATION,
+        "GOOGLE_API_KEY": os.environ.get("GOOGLE_API_KEY", ""),
     }
 
 
