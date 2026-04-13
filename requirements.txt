@@ -2,7 +2,6 @@
 google-adk>=1.0.0
 
 # Vertex AI Agent Engine
-vertexai>=1.87.0
 google-cloud-aiplatform>=1.87.0
 google-cloud-storage>=2.10.0
 
