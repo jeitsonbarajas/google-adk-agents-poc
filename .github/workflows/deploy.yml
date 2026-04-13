@@ -1,0 +1,97 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - google-adk
+
+env:
+  PROJECT_ID: careful-aleph-493015-f6
+  REGION: us-east1
+  REGISTRY: us-east1-docker.pkg.dev
+  IMAGE_NAME: us-east1-docker.pkg.dev/careful-aleph-493015-f6/google-adk-agents/google-adk-agents-poc
+  SERVICE_NAME: google-adk-agents-poc
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # Required for Workload Identity Federation
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Checkout
+      # -----------------------------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # 2. Authenticate to GCP via Workload Identity Federation (no JSON key)
+      # -----------------------------------------------------------------------
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      # -----------------------------------------------------------------------
+      # 3. Configure Docker to push to Artifact Registry
+      # -----------------------------------------------------------------------
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      # -----------------------------------------------------------------------
+      # 4. Build Docker image
+      # -----------------------------------------------------------------------
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag "${{ env.IMAGE_NAME }}:${{ github.sha }}" \
+            --tag "${{ env.IMAGE_NAME }}:latest" \
+            --cache-from "${{ env.IMAGE_NAME }}:latest" \
+            .
+
+      # -----------------------------------------------------------------------
+      # 5. Push image to Artifact Registry
+      # -----------------------------------------------------------------------
+      - name: Push image to Artifact Registry
+        run: |
+          docker push "${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          docker push "${{ env.IMAGE_NAME }}:latest"
+
+      # -----------------------------------------------------------------------
+      # 6. Deploy to Cloud Run
+      # -----------------------------------------------------------------------
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          region: ${{ env.REGION }}
+          flags: >-
+            --platform=managed
+            --allow-unauthenticated
+            --cpu=2
+            --memory=2Gi
+            --max-instances=10
+            --timeout=300
+            --port=8080
+          env_vars: |
+            ENVIRONMENT=production
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+            CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}
+
+      # -----------------------------------------------------------------------
+      # 7. Print deployed URL
+      # -----------------------------------------------------------------------
+      - name: Show service URL
+        run: |
+          echo "=========================================="
+          echo "  Deployed successfully!"
+          echo "  URL: ${{ steps.deploy.outputs.url }}"
+          echo "=========================================="

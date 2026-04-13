@@ -1,0 +1,47 @@
+name: CI — Pull Request Validation
+
+on:
+  pull_request:
+    branches:
+      - google-adk
+
+jobs:
+  validate:
+    name: Lint & Build Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Checkout
+      # -----------------------------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # 2. Set up Python and verify dependencies install cleanly
+      # -----------------------------------------------------------------------
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -r requirements.txt
+
+      # -----------------------------------------------------------------------
+      # 3. Basic syntax check on all Python files
+      # -----------------------------------------------------------------------
+      - name: Python syntax check
+        run: |
+          python -m compileall -q agents/ config/ tools/ workflows/ server.py main.py
+
+      # -----------------------------------------------------------------------
+      # 4. Build Docker image (no push — validates Dockerfile is valid)
+      # -----------------------------------------------------------------------
+      - name: Build Docker image (validation only)
+        run: |
+          docker build --tag pr-validation:${{ github.sha }} .
+          echo "Docker build succeeded."
