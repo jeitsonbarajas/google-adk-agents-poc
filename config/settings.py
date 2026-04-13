@@ -7,6 +7,7 @@ load_dotenv()
 APP_NAME = "google-adk-agents-poc"
 USER_ID = "usuario_123"
 SESSION_SERVICE = InMemorySessionService()
+PORT = int(os.getenv("PORT", 8080))
 
 # Vertex AI config for ADK/Gemini usage in serverless environments.
 USE_VERTEX_AI = os.getenv("USE_VERTEX_AI", "false").lower() == "true"
