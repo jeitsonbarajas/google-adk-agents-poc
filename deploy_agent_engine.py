@@ -1,7 +1,6 @@
 ﻿"""
 deploy_agent_engine.py — Deploys the orquestador to Vertex AI Agent Engine.
 """
-import argparse
 import os
 
 import vertexai
@@ -62,26 +61,10 @@ def deploy_new():
     )
 
 
-def deploy_update(resource_name: str):
-    print(f"Updating existing Agent Engine: {resource_name} ...")
-    remote_agent = reasoning_engines.ReasoningEngine(resource_name)
-    remote_agent.update(
-        reasoning_engine_interface=build_app(),
-        requirements=AGENT_REQUIREMENTS,
-        display_name=DISPLAY_NAME,
-        extra_packages=EXTRA_PACKAGES,
-    )
-    return remote_agent
-
-
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--update", metavar="RESOURCE_NAME")
-    args = parser.parse_args()
-
     vertexai.init(project=PROJECT_ID, location=LOCATION, staging_bucket=STAGING_BUCKET)
 
-    remote_agent = deploy_update(args.update) if args.update else deploy_new()
+    remote_agent = deploy_new()
 
     resource_name = remote_agent.resource_name
     print("")

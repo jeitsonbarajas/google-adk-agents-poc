@@ -48,22 +48,7 @@ jobs:
         run: pip install --no-cache-dir -r requirements.txt
 
       # -----------------------------------------------------------------------
-      # 5. Restore previous Agent Engine resource name (for --update)
-      # -----------------------------------------------------------------------
-      - name: Restore Agent Engine resource name
-        id: restore
-        run: |
-          if [ -f agent_engine_resource.txt ]; then
-            RESOURCE=$(cat agent_engine_resource.txt)
-            echo "resource_name=$RESOURCE" >> $GITHUB_OUTPUT
-            echo "Found existing resource: $RESOURCE"
-          else
-            echo "resource_name=" >> $GITHUB_OUTPUT
-            echo "No existing resource found, will create new deployment."
-          fi
-
-      # -----------------------------------------------------------------------
-      # 6. Deploy (create new or update existing)
+      # 5. Deploy to Vertex AI Agent Engine
       # -----------------------------------------------------------------------
       - name: Deploy to Vertex AI Agent Engine
         env:
@@ -71,15 +56,10 @@ jobs:
           GOOGLE_CLOUD_LOCATION: ${{ env.REGION }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           AGENT_ENGINE_RESOURCE_FILE: agent_engine_resource.txt
-        run: |
-          if [ -n "${{ steps.restore.outputs.resource_name }}" ]; then
-            python deploy_agent_engine.py --update "${{ steps.restore.outputs.resource_name }}"
-          else
-            python deploy_agent_engine.py
-          fi
+        run: python deploy_agent_engine.py
 
       # -----------------------------------------------------------------------
-      # 7. Commit updated resource name back to repo (to enable --update)
+      # 6. Save resource name back to repo
       # -----------------------------------------------------------------------
       - name: Save Agent Engine resource name
         run: |
