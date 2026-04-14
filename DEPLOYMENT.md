@@ -1,6 +1,6 @@
 # 🚀 Guía de Despliegue - Google ADK Agents
 
-Esta guía te ayudará a desplegar el sistema de soporte inteligente en **Railway** y **Google Cloud Run**.
+Esta guía te ayudará a desplegar el sistema de soporte inteligente en **Google Cloud Run**.
 
 ## 📋 Prerequisitos
 
@@ -8,75 +8,11 @@ Esta guía te ayudará a desplegar el sistema de soporte inteligente en **Railwa
 - **Git** instalado
 - **Docker** instalado (para desarrollo local)
 - **API Keys** configuradas:
-  - `OPENAI_API_KEY` (requerido)
-  - `GOOGLE_API_KEY` (opcional, para Gemini)
-  - `CLAUDE_API_KEY` (opcional, para Claude)
+  - `GOOGLE_API_KEY` (requerido) — obtener en [Google AI Studio](https://aistudio.google.com/app/apikey)
 
 ---
 
-## 🚄 Opción A: Despliegue en Railway
-
-### 1. Preparación
-
-```bash
-# Instalar Railway CLI
-npm install -g @railway/cli
-
-# Autenticarse
-railway login
-
-# Clonar repositorio
-git clone <tu-repo>
-cd google-adk-agents-poc
-```
-
-### 2. Configuración de Variables
-
-1. Ir a [Railway Dashboard](https://railway.app/dashboard)
-2. Crear nuevo proyecto
-3. Conectar con GitHub repository
-4. Configurar variables de entorno:
-
-```
-OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-GOOGLE_API_KEY=AIxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-CLAUDE_API_KEY=sk-antxxxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-### 3. Despliegue Automático
-
-```bash
-# Usando script automatizado
-chmod +x deploy-railway.sh
-./deploy-railway.sh
-
-# O manualmente
-railway project
-railway up
-```
-
-### 4. Verificación
-
-- **URL Principal**: `https://tu-app.up.railway.app`
-- **Health Check**: `https://tu-app.up.railway.app/health`
-- **API Docs**: `https://tu-app.up.railway.app/api/docs`
-
-### ⚙️ Configuración Avanzada Railway
-
-```toml
-# railway.toml (ya incluido)
-[deploy]
-healthcheckPath = "/health"
-healthcheckTimeout = 300
-restartPolicyType = "always"
-
-[[services]]
-name = "google-adk-agents"
-```
-
----
-
-## ☁️ Opción B: Despliegue en Google Cloud Run
+## ☁️ Despliegue en Google Cloud Run
 
 ### 1. Preparación
 
@@ -97,10 +33,8 @@ gcloud services enable cloudbuild.googleapis.com run.googleapis.com
 ### 2. Configuración de Secrets
 
 ```bash
-# Crear secrets para API keys
-echo "sk-tu-openai-key" | gcloud secrets create openai-api-key --data-file=-
+# Crear secret para API key
 echo "AI-tu-google-key" | gcloud secrets create google-api-key --data-file=-
-echo "sk-ant-tu-claude-key" | gcloud secrets create claude-api-key --data-file=-
 ```
 
 ### 3. Despliegue Automático
@@ -120,7 +54,7 @@ gcloud builds submit --config cloudbuild.yaml .
 # El script automático hace esto, pero puedes hacerlo manualmente:
 gcloud run services update google-adk-agents \
   --region=us-central1 \
-  --update-secrets="OPENAI_API_KEY=openai-api-key:latest" \
+  --update-secrets="GOOGLE_API_KEY=google-api-key:latest" \
   --update-env-vars="ENVIRONMENT=gcp"
 ```
 
@@ -159,8 +93,8 @@ docker-compose up --build
 docker build -t google-adk-agents .
 
 # Run
-docker run -p 8000:8000 \
-  -e OPENAI_API_KEY=sk-xxxxx \
+docker run -p 8080:8080 \
+  -e GOOGLE_API_KEY=AI-xxxxx \
   -e ENVIRONMENT=docker \
   google-adk-agents
 ```
@@ -180,16 +114,11 @@ curl https://tu-app.com/health
 # Respuesta esperada:
 {
   "status": "healthy",
-  "environment": "railway|gcp|docker"
+  "environment": "gcp|docker"
 }
 ```
 
 ### Logs
-
-#### Railway:
-```bash
-railway logs --follow
-```
 
 #### Google Cloud Run:
 ```bash
@@ -207,14 +136,12 @@ docker logs -f <container-id>
 #### Error: "Missing API Key"
 ```bash
 # Verificar variables de entorno
-railway variables  # Railway
-gcloud secrets versions list openai-api-key  # GCP
-docker exec <container> env | grep API_KEY  # Docker
+gcloud secrets versions list google-api-key  # GCP
+docker exec <container> env | grep API_KEY   # Docker
 ```
 
 #### Error: "Port binding failed"
 ```bash
-# Railway: El puerto se asigna automáticamente
 # GCP: Cloud Run maneja puertos automáticamente  
 # Docker: Verificar que el puerto no esté ocupado
 ```
@@ -230,10 +157,6 @@ docker exec <container> env | grep API_KEY  # Docker
 ## 🔒 Configuración de Seguridad
 
 ### Variables de Entorno Seguras
-
-**Railway:**
-- Variables encriptadas automáticamente
-- Acceso via Railway Dashboard
 
 **Google Cloud Run:**
 - Usar Secret Manager para API keys
@@ -260,10 +183,6 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 
 ## 📈 Configuración de Escalabilidad
 
-### Railway:
-- Escalado automático disponible
-- Configurar en Railway Dashboard
-
 ### Google Cloud Run:
 ```bash
 # Configurar escalado
@@ -279,43 +198,19 @@ gcloud run services update google-adk-agents \
 
 ## 💰 Estimación de Costos
 
-### Railway:
-- **Hobby Plan**: $5/mes
-- **Pro Plan**: $20/mes
-- + costos de API calls (OpenAI, etc.)
-
 ### Google Cloud Run:
 - **Free Tier**: 2M requests/mes
 - **Pay-per-use**: ~$0.40/million requests
 - + costos de Container Registry
 - + costos de API calls
 
-### APIs Externas:
-- **OpenAI GPT-4**: ~$30/1M tokens
-- **Google Gemini**: Gratis hasta límite
-- **Anthropic Claude**: ~$15/1M tokens
+### APIs:
+- **Google Gemini**: Gratis hasta límite — ver [precios](https://ai.google.dev/pricing)
+- **Vertex AI Gemini**: Pay-per-use — ver [precios](https://cloud.google.com/vertex-ai/pricing)
 
 ---
 
 ## 🔄 CI/CD Pipeline
-
-### GitHub Actions (Railway)
-
-```yaml
-# .github/workflows/railway-deploy.yml
-name: Deploy to Railway
-on:
-  push:
-    branches: [main]
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: railway deploy
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-```
 
 ### GitHub Actions (GCP)
 
@@ -352,9 +247,6 @@ jobs:
 
 ## 🆘 Soporte
 
-**Problemas de Railway:**
-- [Railway Discord](https://discord.gg/railway)
-- [Railway Docs](https://docs.railway.app/)
 
 **Problemas de GCP:**
 - [Cloud Run Docs](https://cloud.google.com/run/docs)

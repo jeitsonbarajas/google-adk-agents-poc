@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Punto de entrada para producción en Railway y Google Cloud Run
+Punto de entrada para producción en Google Cloud Run
 """
 import os
 import sys
@@ -11,12 +11,12 @@ from contextlib import asynccontextmanager
 # Configuración para producción
 PORT = int(os.getenv("PORT", 8000))
 HOST = "0.0.0.0"
-ENVIRONMENT = os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("GOOGLE_CLOUD_PROJECT") or "development"
+ENVIRONMENT = os.getenv("GOOGLE_CLOUD_PROJECT") or "development"
 
 def setup_production_environment():
     """Configurar el entorno de producción"""
     # Verificar que las variables críticas estén configuradas
-    required_vars = ["OPENAI_API_KEY"]
+    required_vars = ["GOOGLE_API_KEY"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     
     if missing_vars:
@@ -44,7 +44,7 @@ def create_production_app():
         version="1.0.0"
     )
     
-    # Health check para Railway/Cloud Run
+    # Health check para Cloud Run
     @app.get("/health")
     async def health_check():
         return {"status": "healthy", "environment": ENVIRONMENT}

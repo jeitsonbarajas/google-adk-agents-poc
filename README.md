@@ -10,7 +10,7 @@ Esta **POC** fue diseñada para demostrar las capacidades de **Google ADK** en u
 
 1. **🤖 Orquestación Inteligente**: Demostrar cómo un agente coordinador puede gestionar flujos complejos distribuyendo tareas a agentes especializados
 2. **🔧 Especialización de Agentes**: Mostrar agentes con responsabilidades específicas (clasificación, resolución, redacción)
-3. **🛠️ Integración de Herramientas**: Ilustrar cómo los agentes pueden invocar APIs externas (OpenAI GPT-4) de forma autónoma
+3. **🛠️ Integración de Herramientas**: Ilustrar cómo los agentes pueden invocar APIs externas (Gemini) de forma autónoma
 4. **👥 Human-in-the-Loop**: Implementar validación humana manteniendo la eficiencia del sistema automatizado
 5. **🌐 Interfaces Múltiples**: Proporcionar tanto CLI como interfaz web para diferentes casos de uso
 
@@ -18,8 +18,8 @@ Esta **POC** fue diseñada para demostrar las capacidades de **Google ADK** en u
 
 | Escenario | Agente Principal | Herramientas | Resultado |
 |-----------|------------------|--------------|-----------|
-| **Problema Técnico** | Agente Resolutor | `resolver_problema_tecnico` + GPT-4 | Diagnóstico técnico detallado |
-| **Problema Facturación** | Agente Resolutor | `resolver_problema_facturacion` + GPT-4 | Análisis financiero y solución |
+| **Problema Técnico** | Agente Resolutor | `resolver_problema_tecnico` + Gemini | Diagnóstico técnico detallado |
+| **Problema Facturación** | Agente Resolutor | `resolver_problema_facturacion` + Gemini | Análisis financiero y solución |
 | **Redacción Final** | Agente Redactor | Procesamiento interno | Respuesta empática al cliente |
 
 ### 🏆 Valor Agregado de la Arquitectura
@@ -33,7 +33,7 @@ Esta **POC** fue diseñada para demostrar las capacidades de **Google ADK** en u
 ## 🏗️ Arquitectura del Sistema
 
 **Patrón:** Orquestador + Sub-agentes + Herramientas Externas + Human-in-the-Loop  
-**Tecnologías:** Python 3.11+, Google ADK, FastAPI, OpenAI GPT-4, Gemini 2.5 Flash
+**Tecnologías:** Python 3.11+, Google ADK, FastAPI, Gemini 2.5 Flash
 
 ### 🎯 Flujo de Trabajo
 
@@ -44,7 +44,7 @@ flowchart TD
     C --> D{Clasificación}
     D -->|Técnico| E[Agente Resolutor<br/>+ Tool Técnica]
     D -->|Facturación| F[Agente Resolutor<br/>+ Tool Facturación]
-    E --> G[GPT-4 via Proxy<br/>Diagnóstico detallado]
+    E --> G[Gemini via API<br/>Diagnóstico detallado]
     F --> G
     G --> H[Solución generada]
     H --> I[👨‍💼 Auditoría Humana<br/>HITL Validation]
@@ -76,7 +76,7 @@ google-adk-agents-poc/
 │   │
 │   ├── tools/                  # 🔧 Herramientas invocables
 │   │   ├── __init__.py
-│   │   ├── llamar_gpt4.py      # Adaptador HTTP a OpenAI
+│   │   ├── llamar_model.py     # Adaptador HTTP a Gemini
 │   │   ├── resolver_problema_tecnico.py
 │   │   ├── resolver_problema_facturacion.py
 │   │   └── resolver_problema_con_multimodel.py
@@ -129,16 +129,14 @@ pip install -r requirements.txt
 Crear archivo `.env` en la raíz del proyecto:
 
 ```env
-# API Keys (requerido mínimo OPENAI_API_KEY)
-OPENAI_API_KEY=sk-xxxxxxxxxxxxxx
-GOOGLE_API_KEY=AIxxxxxxxxxxxx          # Para Gemini (opcional)
-CLAUDE_API_KEY=sk-antxxxxxxxxxxxxx     # Para Claude (opcional)
+# API Keys (REQUERIDO)
+GOOGLE_API_KEY=AIxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-# Configuración del proxy HTTP
-PORT=8001
-ADAPTER_SERVER_URL=http://127.0.0.1:8001
+# Configuración del servidor
+PORT=8080
+ADAPTER_SERVER_URL=http://127.0.0.1:8080
 
-# Configuración ADK Web  
+# Configuración ADK Web
 ADK_WEB_PORT=8000
 ```
 
@@ -197,33 +195,14 @@ cd agents-poc
 python start.py --all
 
 # Servicios disponibles:
-# - Proxy GPT: http://127.0.0.1:8001  
+# - Proxy Gemini: http://127.0.0.1:8080
 # - ADK Web: http://127.0.0.1:8000
 # - CLI: python main.py (en otra terminal)
 ```
 
 ## 🚀 Despliegue en Producción
 
-### 🚄 Railway (Recomendado para Simplicidad)
-
-```bash
-# Configuración inicial
-./setup.sh  # o setup.bat en Windows
-
-# Despliegue automático
-./deploy-railway.sh
-
-# URL: https://tu-proyecto.up.railway.app
-```
-
-**Características:**
-- Despliegue automático desde GitHub
-- Variables de entorno seguras
-- SSL/HTTPS incluido
-- Escalado automático
-- $5-20/mes + API costs
-
-### ☁️ Google Cloud Run (Recomendado para Escala)
+### ☁️ Google Cloud Run (Recomendado)
 
 ```bash
 # Configuración inicial
@@ -251,18 +230,14 @@ docker-compose up --build
 
 # Docker directo
 docker build -t google-adk-agents .
-docker run -p 8000:8000 -e OPENAI_API_KEY=sk-xxx google-adk-agents
+docker run -p 8080:8080 -e GOOGLE_API_KEY=AIxxxxxx google-adk-agents
 ```
 
 ### 📋 Variables de Entorno Requeridas
 
 ```bash
-# Mínimo requerido
-OPENAI_API_KEY=sk-xxxxxxxxxxxxxx
-
-# Opcionales para más modelos
-GOOGLE_API_KEY=AIxxxxxxxxxxxxxx
-CLAUDE_API_KEY=sk-antxxxxxxxxxxxxx
+# Requerido
+GOOGLE_API_KEY=AIxxxxxxxxxxxx
 ```
 
 **📖 Ver [DEPLOYMENT.md](DEPLOYMENT.md) para guías detalladas paso a paso**
@@ -287,15 +262,13 @@ ui:
   description: "Resuelve problemas técnicos y de facturación con IA"
 ```
 
-### 🔧 Proxy Multi-Modelo
+### 🔧 Proxy Gemini
 
-El sistema incluye un proxy HTTP que soporta múltiples proveedores de IA:
+El sistema incluye un proxy HTTP que expone la API de Gemini:
 
 ```python
-# Modelos soportados via proxy HTTP
-- "gpt-4o-mini", "gpt-4o", "gpt-4-turbo"  # OpenAI
-- "gemini-2.5-flash"                      # Google Gemini  
-- "claude-sonnet-4-6"                     # Anthropic Claude
+# Modelo soportado via proxy HTTP
+- "gemini-2.5-flash"                      # Google Gemini
 ```
 
 ## 🛠️ Desarrollo y Personalización
@@ -317,7 +290,7 @@ from google.adk.agents import LlmAgent
 
 mi_agente = LlmAgent(
     name="MiAgente",
-    model="gemini-2.5-flash",  # o "gpt-4o-mini"
+    model="gemini-2.5-flash",
     instruction="Tu especialidad aquí...",
     tools=[...]  # Herramientas opcionales
 )
@@ -378,18 +351,18 @@ python main.py --debug
 python test_agents.py
 
 # Verificar proxy HTTP
-curl http://127.0.0.1:8001/v1/chat/completions \
+curl http://127.0.0.1:8080/v1/chat/completions \
   -X POST \
   -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"test"}]}'
-```
+  -d '{"messages":[{"role":"user","content":"test"}]}' \
+  -G --data-urlencode "model=gemini-2.5-flash"
 
 ## 📈 Rendimiento y Escalabilidad
 
 ### ⚡ Optimizaciones Implementadas
 
 - **Asíncrono por Defecto**: Todo el sistema usa `async/await`
-- **Múltiples Modelos**: Fallback automático entre proveedores  
+- **Múltiples Modelos**: Gemini con fallback automático
 - **Sesiones Únicas**: Cada ticket tiene su propia sesión aislada
 - **Conexiones Persistentes**: Reutilización de conexiones HTTP
 - **Memoria Eficiente**: Gestión automática de sesiones ADK
@@ -398,7 +371,7 @@ curl http://127.0.0.1:8001/v1/chat/completions \
 
 - **Latencia promedio**: ~2-5 segundos por respuesta completa
 - **Concurrencia**: Soporta múltiples tickets simultáneos
-- **Throughput**: Limitado por API keys de terceros (OpenAI/Gemini)
+- **Throughput**: Limitado por cuota de la API de Gemini
 
 ## 🤝 Contribuciones
 
@@ -442,7 +415,7 @@ MIT License - ver archivo `LICENSE` para detalles.
 cd agents-poc
 python main.py
 # Input: "Mi servidor web está caído desde esta mañana"
-# Demostrar: Clasificación automática → Agente técnico → GPT-4 → Solución
+# Demostrar: Clasificación automática → Agente técnico → Gemini → Solución
 ```
 
 #### 2. **🔄 Human-in-the-Loop**
@@ -476,7 +449,7 @@ python start.py --custom-web
 
 **Mostrar en vivo:**
 - **Logs de agentes**: Ver coordinación en tiempo real
-- **Proxy HTTP**: Demostrar múltiples modelos (OpenAI, Gemini)
+- **Proxy HTTP**: Demostrar el modelo Gemini
 - **Sesiones ADK**: Mostrar gestión de contexto
 - **Herramientas**: Ver invocación automática de APIs externas
 
@@ -489,7 +462,7 @@ python start.py --custom-web
 3. Mostrar:
    - Clasificación automática como "problema técnico"
    - Invocación del Agente Resolutor
-   - Llamada a GPT-4 via herramienta técnica
+   - Llamada a Gemini via herramienta técnica
    - Diagnóstico detallado generado
 4. Auditoría humana: Aprobar solución
 5. Agente Redactor: Respuesta empática final
@@ -514,7 +487,7 @@ python start.py --custom-web
    - agents/agente_redactor.py
 
 2. Demostrar herramientas:
-   - tools/llamar_gpt4.py
+   - tools/llamar_model.py
    - tools/resolver_problema_tecnico.py
 
 3. Configuración ADK:
@@ -533,15 +506,10 @@ python start.py --custom-web
 
 ### 🎪 **Demostraciones Opcionales**
 
-#### **Demo Avanzada: Múltiples Modelos**
+#### **Demo Avanzada: Proxy Gemini**
 ```bash
-# Mostrar proxy funcionando con diferentes modelos
-curl -X POST http://127.0.0.1:8001/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"Test GPT-4"}]}' \
-  -G --data-urlencode "model=gpt-4o-mini"
-
-curl -X POST http://127.0.0.1:8001/v1/chat/completions \
+# Mostrar proxy funcionando con Gemini
+curl -X POST http://127.0.0.1:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"messages":[{"role":"user","content":"Test Gemini"}]}' \
   -G --data-urlencode "model=gemini-2.5-flash"
@@ -601,9 +569,10 @@ python main.py
 ### 🔗 Enlaces Útiles
 
 - [Google ADK Documentation](https://developers.google.com/ai/adk)
-- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)  
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Gemini AI Documentation](https://developers.google.com/gemini)
+- [Google AI Studio](https://aistudio.google.com/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Vertex AI Documentation](https://cloud.google.com/vertex-ai/docs)
 
 ---
 

@@ -56,24 +56,14 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 # Configurar secrets (API Keys)
 echo "🔑 Configurando secrets..."
 echo "Por favor configura los siguientes secrets en Secret Manager:"
-echo "1. OPENAI_API_KEY"
-echo "2. GOOGLE_API_KEY (opcional)"
-echo "3. CLAUDE_API_KEY (opcional)"
+echo "1. GOOGLE_API_KEY"
 
-read -p "¿Deseas configurar los secrets ahora? (y/n): " -n 1 -r
+read -p "¿Deseas configurar el secret ahora? (y/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    read -s -p "Ingresa tu OPENAI_API_KEY: " OPENAI_KEY
+    read -s -p "Ingresa tu GOOGLE_API_KEY: " GOOGLE_KEY
     echo
-    echo "$OPENAI_KEY" | gcloud secrets create openai-api-key --data-file=-
-    
-    read -p "¿Configurar GOOGLE_API_KEY? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        read -s -p "Ingresa tu GOOGLE_API_KEY: " GOOGLE_KEY
-        echo
-        echo "$GOOGLE_KEY" | gcloud secrets create google-api-key --data-file=-
-    fi
+    echo "$GOOGLE_KEY" | gcloud secrets create google-api-key --data-file=-
 fi
 
 # Construir y deployar usando Cloud Build
@@ -85,7 +75,6 @@ echo "⚙️  Configurando Cloud Run..."
 gcloud run services update $SERVICE_NAME \
     --region=$REGION \
     --update-env-vars="ENVIRONMENT=gcp,PYTHONPATH=/app" \
-    --update-secrets="OPENAI_API_KEY=openai-api-key:latest" \
     --update-secrets="GOOGLE_API_KEY=google-api-key:latest" \
     || echo "Configuración aplicada parcialmente"
 

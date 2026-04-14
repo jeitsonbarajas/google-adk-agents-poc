@@ -23,9 +23,7 @@ railway project
 # Configurar variables de entorno
 echo "⚙️  Configurando variables de entorno..."
 echo "🔑 Por favor configura las siguientes variables en Railway Dashboard:"
-echo "   OPENAI_API_KEY=sk-xxxxxx"
-echo "   GOOGLE_API_KEY=AIxxxxxx (opcional)"
-echo "   CLAUDE_API_KEY=sk-antxxxxx (opcional)"
+echo "   GOOGLE_API_KEY=AIxxxxxx"
 
 read -p "¿Has configurado las API keys en Railway Dashboard? (y/n): " -n 1 -r
 echo

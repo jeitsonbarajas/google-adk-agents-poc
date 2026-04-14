@@ -7,7 +7,7 @@ from tools.resolver_problema_facturacion import resolver_problema_facturacion
 # ═══════════════════════════════════════════════════════
 # --- Agente Resolutor (sub-agente con tools) ---
 # Recibe el ticket ya clasificado y decide qué tool usar.
-# Habla con GPT-4 a través de las tools sin intervención de Python.
+# Habla con Gemini a través de las tools sin intervención de Python.
 agente_resolutor = LlmAgent(
     name="AgenteResolutor",
     model="gemini-2.5-flash",

@@ -12,9 +12,7 @@ services:
       - PYTHONPATH=/app
       - ADAPTER_SERVER_URL=http://localhost:8000/api
       # Cargar desde .env
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
     volumes:
       - ./agents-poc:/app
       - logs_volume:/app/logs

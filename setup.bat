@@ -47,9 +47,7 @@ if not exist .env (
     echo 🔑 IMPORTANTE: Edita .env con tus API keys antes de continuar
     echo.
     echo    Necesitas configurar:
-    echo    - OPENAI_API_KEY=sk-xxxxx
-    echo    - GOOGLE_API_KEY=AIxxxxx (opcional)
-    echo    - CLAUDE_API_KEY=sk-antxxxxx (opcional)
+    echo    - GOOGLE_API_KEY=AIxxxxx
 ) else (
     echo ⚠️  .env ya existe, saltando...
 )
@@ -67,7 +65,7 @@ if exist agents-poc (
 REM Test básico
 echo 🧪 Ejecutando test básico...
 cd agents-poc
-python -c "try: import google.adk, openai, fastapi; print('✅ Importaciones básicas funcionan')" 2>nul || echo ❌ Error en importaciones
+python -c "try: import google.adk, fastapi; print('✅ Importaciones básicas funcionan')" 2>nul || echo ❌ Error en importaciones
 
 echo.
 echo 🎉 ¡Configuración inicial completada!
@@ -79,7 +77,6 @@ echo    cd agents-poc ^&^& python main.py
 echo 3. Interfaz web:
 echo    cd agents-poc ^&^& python start.py --adk-web
 echo 4. Despliegue:
-echo    deploy-railway.sh   # para Railway
 echo    deploy-gcp.sh       # para Google Cloud Run
 echo.
 echo 📖 Ver DEPLOYMENT.md para más detalles

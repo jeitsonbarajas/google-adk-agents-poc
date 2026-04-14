@@ -1,26 +1,14 @@
 # 📦 Artefactos de Despliegue - Google ADK Agents
 
-Lista completa de archivos creados para despliegue en Railway y Google Cloud Run.
+Lista completa de archivos creados para despliegue en Google Cloud Run.
 
 ## 🐳 Containerización
 
 | Archivo | Descripción | Uso |
 |---------|-------------|-----|
-| `Dockerfile` | Imagen Docker optimizada para producción | Railway, GCP, desarrollo local |
+| `Dockerfile` | Imagen Docker optimizada para producción | GCP, desarrollo local |
 | `docker-compose.yml` | Orquestación para desarrollo local | Desarrollo con Docker |
 | `.dockerignore` | Archivos excluidos del build | Optimización de imagen |
-
-## ⚡ Railway
-
-| Archivo | Descripción | Configuración |
-|---------|-------------|---------------|
-| `railway.toml` | Configuración de Railway | Build, deploy, variables |
-| `deploy-railway.sh` | Script automatizado de despliegue | CLI de Railway |
-
-**Variables requeridas en Railway Dashboard:**
-- `OPENAI_API_KEY`
-- `GOOGLE_API_KEY` (opcional)
-- `CLAUDE_API_KEY` (opcional)
 
 ## ☁️ Google Cloud Run
 
@@ -28,6 +16,9 @@ Lista completa de archivos creados para despliegue en Railway y Google Cloud Run
 |---------|-------------|-----------|
 | `cloudbuild.yaml` | Configuración de Cloud Build | CI/CD automático |
 | `deploy-gcp.sh` | Script automatizado de despliegue | gcloud CLI |
+
+**Variables requeridas:**
+- `GOOGLE_API_KEY`
 
 **Recursos GCP creados:**
 - Container Registry images
@@ -60,24 +51,10 @@ Lista completa de archivos creados para despliegue en Railway y Google Cloud Run
 
 | Archivo | Descripción | Contenido |
 |---------|-------------|-----------|
-| `DEPLOYMENT.md` | Guía completa de despliegue | Pasos detallados para ambas plataformas |
+| `DEPLOYMENT.md` | Guía completa de despliegue | Pasos detallados para Google Cloud Run |
 | `DEPLOYMENT_ARTIFACTS.md` | Este archivo | Lista de artefactos |
 
 ## 🔄 Workflows Sugeridos
-
-### Para GitHub Actions (Railway):
-```yaml
-name: Deploy to Railway
-on: [push]
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: railway deploy
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-```
 
 ### Para GitHub Actions (GCP):
 ```yaml
@@ -103,15 +80,10 @@ setup.bat   # Windows
 docker-compose up --build
 
 # Verificar funcionamiento
-curl http://localhost:8000/health
+curl http://localhost:8080/health
 ```
 
 ## 📊 URLs de Producción
-
-### Railway:
-- **App**: `https://tu-proyecto.up.railway.app`
-- **Health**: `https://tu-proyecto.up.railway.app/health`
-- **API**: `https://tu-proyecto.up.railway.app/api/docs`
 
 ### Google Cloud Run:
 - **App**: `https://google-adk-agents-xyz-uc.a.run.app`
@@ -121,12 +93,6 @@ curl http://localhost:8000/health
 ## 🔧 Comandos Útiles
 
 ```bash
-# Railway
-railway login
-railway link
-railway logs --follow
-railway variables
-
 # Google Cloud
 gcloud auth login
 gcloud config set project PROJECT_ID
@@ -135,7 +101,7 @@ gcloud logs tail --follow
 
 # Docker
 docker build -t google-adk-agents .
-docker run -p 8000:8000 google-adk-agents
+docker run -p 8080:8080 google-adk-agents
 docker-compose up --build
 ```
 

@@ -41,7 +41,7 @@ async def ejecutar_flujo_soporte(ticket_usuario: str) -> str:
 
     # ─────────────────────────────────────────
     # FASE 1: RESOLUCIÓN
-    # Orquestador → AgenteResolutor → GPT-4 (via tool)
+    # Orquestador → AgenteResolutor → Gemini (via tool)
     # Los agentes hablan entre sí dentro de esta fase.
     # ─────────────────────────────────────────
     print("\n[FASE 1] Orquestador coordinando resolución del ticket...")
