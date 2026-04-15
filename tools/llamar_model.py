@@ -29,7 +29,7 @@ def _get_client() -> genai.Client:
 def generar_respuesta(analisis: str):
     client = _get_client()
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3-flash-preview",
         contents=analisis
     )
     return response.candidates[0].content.parts[0].text

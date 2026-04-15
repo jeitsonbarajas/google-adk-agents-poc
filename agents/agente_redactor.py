@@ -8,7 +8,7 @@ from google.adk.agents import LlmAgent
 # en una respuesta empática para el cliente.
 agente_redactor = LlmAgent(
     name="AgenteRedactor",
-    model="gemini-2.5-flash",
+    model="gemini-3-flash-preview",
     instruction="""
 Eres un redactor profesional de soporte al cliente.
 Recibirás una solución técnica o de facturación ya validada por un auditor humano.

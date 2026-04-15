@@ -10,7 +10,7 @@ from tools.resolver_problema_facturacion import resolver_problema_facturacion
 # Habla con Gemini a través de las tools sin intervención de Python.
 agente_resolutor = LlmAgent(
     name="AgenteResolutor",
-    model="gemini-2.5-flash",
+    model="gemini-3-flash-preview",
     tools=[
         FunctionTool(resolver_problema_tecnico),
         FunctionTool(resolver_problema_facturacion),
@@ -23,7 +23,7 @@ Cuando recibas un ticket:
 2. Usa la herramienta correspondiente para obtener la solución:
    - Problemas técnicos (errores, APIs, infraestructura, conexiones) → resolver_problema_tecnico
    - Problemas de facturación (cobros, pagos, disputas) → resolver_problema_facturacion
-3. Devuelve la solución completa obtenida de la herramienta.
+3. Devuelve la solución completa obtenida de la herramienta al agente Orquestador.
 
 IMPORTANTE: Siempre usa una herramienta. No respondas sin consultarlas.
 """

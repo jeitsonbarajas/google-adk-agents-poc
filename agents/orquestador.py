@@ -10,7 +10,7 @@ from agents.agente_redactor import agente_redactor
 # les habla y les pasa contexto directamente.
 orquestador = LlmAgent(
     name="Orquestador",
-    model="gemini-2.5-flash",
+    model="gemini-3-flash-preview",
     sub_agents=[agente_resolutor, agente_redactor],
     instruction="""
 Eres el coordinador del sistema de soporte de Glosas IG Services.
@@ -23,10 +23,8 @@ REGLAS ESTRICTAS:
 Tu flujo de trabajo es:
 1. Recibe el ticket del cliente.
 2. Transfiere el ticket completo al AgenteResolutor.
-3. Devuelve la respuesta COMPLETA del AgenteResolutor, sin modificarla ni agregar nada.
+3. Recibe la respuesta COMPLETA del AgenteResolutor, sin modificarla ni agregar nada.
+4. Envia respuesta COMPLETA al AgenteRedactor.
 
-Cuando recibas una solucion validada para redactar:
-1. Transfiere la solucion completa al AgenteRedactor.
-2. Devuelve la respuesta COMPLETA del AgenteRedactor, sin modificarla ni agregar nada.
 """
 )

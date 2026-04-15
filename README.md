@@ -58,9 +58,9 @@ flowchart TD
 
 ### 🧠 Agentes Especializados
 
-- **🎭 Orquestador** (`gemini-2.5-flash`): Coordina todo el flujo y maneja comunicación entre agentes
-- **🔧 Agente Resolutor** (`gemini-2.5-flash`): Especialista en clasificación y resolución de problemas
-- **✍️ Agente Redactor** (`gemini-2.5-flash`): Convierte soluciones técnicas en respuestas empáticas al cliente
+- **🎭 Orquestador** (`gemini-3-flash-preview`): Coordina todo el flujo y maneja comunicación entre agentes
+- **🔧 Agente Resolutor** (`gemini-3-flash-preview`): Especialista en clasificación y resolución de problemas
+- **✍️ Agente Redactor** (`gemini-3-flash-preview`): Convierte soluciones técnicas en respuestas empáticas al cliente
 
 ## 📂 Estructura del Proyecto
 
@@ -268,7 +268,7 @@ El sistema incluye un proxy HTTP que expone la API de Gemini:
 
 ```python
 # Modelo soportado via proxy HTTP
-- "gemini-2.5-flash"                      # Google Gemini
+- "gemini-3-flash-preview"                      # Google Gemini
 ```
 
 ## 🛠️ Desarrollo y Personalización
@@ -290,7 +290,7 @@ from google.adk.agents import LlmAgent
 
 mi_agente = LlmAgent(
     name="MiAgente",
-    model="gemini-2.5-flash",
+    model="gemini-3-flash-preview",
     instruction="Tu especialidad aquí...",
     tools=[...]  # Herramientas opcionales
 )
@@ -355,7 +355,7 @@ curl http://127.0.0.1:8080/v1/chat/completions \
   -X POST \
   -H "Content-Type: application/json" \
   -d '{"messages":[{"role":"user","content":"test"}]}' \
-  -G --data-urlencode "model=gemini-2.5-flash"
+  -G --data-urlencode "model=gemini-3-flash-preview"
 
 ## 📈 Rendimiento y Escalabilidad
 
@@ -512,7 +512,7 @@ python start.py --custom-web
 curl -X POST http://127.0.0.1:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{"messages":[{"role":"user","content":"Test Gemini"}]}' \
-  -G --data-urlencode "model=gemini-2.5-flash"
+  -G --data-urlencode "model=gemini-3-flash-preview"
 ```
 
 #### **Demo Técnica: Logs en Vivo**
